@@ -24,24 +24,57 @@ class _VerdurasPageState extends State<VerdurasPage> {
       body: FutureBuilder<List<Verdura>>(
         future: futureVerduras,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No hay verduras disponibles.'));
-          }
+          // Manejo de estados más detallado
+          switch (snapshot.connectionState) {
+            case ConnectionState.waiting:
+              return Center(child: CircularProgressIndicator());
+            case ConnectionState.done:
+              if (snapshot.hasError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red, size: 60),
+                      Text('Error al cargar verduras', 
+                        style: TextStyle(color: Colors.red)),
+                      Text('${snapshot.error}'),
+                      ElevatedButton(
+                        onPressed: () => setState(() {
+                          futureVerduras = controller.fetchVerduras();
+                        }),
+                        child: Text('Reintentar'),
+                      )
+                    ],
+                  ),
+                );
+              }
+              
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.agriculture, size: 60),
+                      Text('No hay verduras disponibles'),
+                    ],
+                  ),
+                );
+              }
 
-          List<Verdura> verduras = snapshot.data!;
-          return ListView.builder(
-            itemCount: verduras.length,
-            itemBuilder: (context, index) {
-              return ListTile(
-                title: Text(verduras[index].descripcion),
-                subtitle: Text('Precio: ${verduras[index].precio}'),
+              List<Verdura> verduras = snapshot.data!;
+              return ListView.builder(
+                itemCount: verduras.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    leading: Icon(Icons.local_grocery_store),
+                    title: Text(verduras[index].descripcion),
+                    subtitle: Text('Código: ${verduras[index].codigo} - Precio: \$${verduras[index].precio}'),
+                  );
+                },
               );
-            },
-          );
+            default:
+              return Center(child: CircularProgressIndicator());
+          }
         },
       ),
     );
